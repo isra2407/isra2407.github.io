@@ -8,16 +8,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <!-- Librerías externas -->
+    <!-- Confeti (única librería externa) -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <style>
         /* --- Estilos generales --- */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Poppins', sans-serif;
             background-color: #0a0a0a;
@@ -27,7 +22,6 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: background-color 0.8s ease;
         }
         .screen {
             display: none;
@@ -39,10 +33,7 @@
             padding: 20px;
             position: relative;
         }
-        .screen.active {
-            display: flex;
-            animation: fadeIn 1s ease forwards;
-        }
+        .screen.active { display: flex; animation: fadeIn 1s ease forwards; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
@@ -50,15 +41,15 @@
         .hidden { display: none !important; }
 
         /* --- Botón de silencio --- */
-        .mute-btn {
+        #mute-btn {
             position: fixed;
             top: 15px;
             right: 15px;
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.15);
-            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.35);
             color: #fff;
             font-size: 1.4rem;
             cursor: pointer;
@@ -70,18 +61,15 @@
             justify-content: center;
             padding: 0;
             line-height: 1;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
         }
-        .mute-btn:hover {
-            background: rgba(255,255,255,0.3);
-            transform: scale(1.1);
-        }
-        .mute-btn.muted {
-            background: rgba(231,76,60,0.5);
-            border-color: rgba(231,76,60,0.8);
+        #mute-btn:hover { background: rgba(255,255,255,0.35); transform: scale(1.1); }
+        #mute-btn.muted {
+            background: rgba(231,76,60,0.55);
+            border-color: rgba(231,76,60,0.9);
         }
 
-        /* --- Pantalla de la vela --- */
+        /* --- Vela --- */
         #candle-screen {
             background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
             cursor: pointer;
@@ -138,42 +126,33 @@
         .wax::before {
             content: '';
             position: absolute;
-            top: -5px;
-            left: 50%;
+            top: -5px; left: 50%;
             transform: translateX(-50%);
-            width: 45px;
-            height: 10px;
+            width: 45px; height: 10px;
             background: #e0c9a6;
             border-radius: 50%;
         }
         .wick {
-            width: 4px;
-            height: 20px;
+            width: 4px; height: 20px;
             background: #333;
             position: absolute;
-            top: -20px;
-            left: 50%;
+            top: -20px; left: 50%;
             transform: translateX(-50%);
             border-radius: 2px;
             z-index: 2;
         }
         .smoke {
             position: absolute;
-            top: -30px;
-            left: 50%;
+            top: -30px; left: 50%;
             transform: translateX(-50%);
-            width: 20px;
-            height: 20px;
-            background: rgba(200, 200, 200, 0.3);
+            width: 20px; height: 20px;
+            background: rgba(200,200,200,0.3);
             border-radius: 50%;
             filter: blur(8px);
             opacity: 0;
             pointer-events: none;
-            transition: opacity 1s ease;
         }
-        .smoke.active {
-            animation: smokeUp 2s ease-out forwards;
-        }
+        .smoke.active { animation: smokeUp 2s ease-out forwards; }
         @keyframes smokeUp {
             0% { opacity: 1; top: -30px; transform: translateX(-50%) scale(1); }
             100% { opacity: 0; top: -100px; transform: translateX(-50%) scale(3); }
@@ -190,10 +169,8 @@
             50% { opacity: 1; }
         }
 
-        /* --- Pantalla del sobre --- */
-        #envelope-screen {
-            background: linear-gradient(135deg, #1e1e2f, #2a2a40);
-        }
+        /* --- Sobre --- */
+        #envelope-screen { background: linear-gradient(135deg, #1e1e2f, #2a2a40); }
         .envelope-wrapper {
             position: relative;
             width: 300px;
@@ -208,8 +185,7 @@
             50% { transform: translateY(-15px); }
         }
         .envelope {
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             background: #f5e6d3;
             border-radius: 0 0 10px 10px;
             position: relative;
@@ -219,45 +195,20 @@
         .envelope::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 0;
-            height: 0;
+            top: 0; left: 0;
+            width: 0; height: 0;
             border-left: 150px solid transparent;
             border-right: 150px solid transparent;
             border-top: 100px solid #e0c9a6;
             z-index: 2;
             transition: transform 0.6s ease;
         }
-        .envelope.open::before {
-            transform: rotateX(180deg);
-            transform-origin: top;
-        }
-        .envelope-flap {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-        .envelope-flap::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            border-left: 150px solid transparent;
-            border-right: 150px solid transparent;
-            border-top: 100px solid #f5e6d3;
-        }
+        .envelope.open::before { transform: rotateX(180deg); transform-origin: top; }
         .seal {
             position: absolute;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 60px;
-            height: 60px;
+            width: 60px; height: 60px;
             background: radial-gradient(circle, #e74c3c, #c0392b);
             border-radius: 50%;
             z-index: 3;
@@ -278,7 +229,7 @@
             animation: pulse 2s infinite;
         }
 
-        /* --- Pantalla de la tarjeta --- */
+        /* --- Tarjeta --- */
         #card-screen {
             background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
             overflow: hidden;
@@ -300,15 +251,12 @@
             transform: scale(0.8);
             opacity: 0;
         }
-        @keyframes cardEntry {
-            to { transform: scale(1); opacity: 1; }
-        }
+        @keyframes cardEntry { to { transform: scale(1); opacity: 1; } }
         .card h1 {
             font-family: 'Great Vibes', cursive;
             font-size: 3.5rem;
             color: #b57edc;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
         }
         .card h2 {
             font-size: 2rem;
@@ -339,21 +287,17 @@
             transform: translateY(-3px) scale(1.05);
             box-shadow: 0 10px 25px rgba(231, 76, 60, 0.6);
         }
-        /* Globos y luces de fondo */
         .balloons-container, .lights-container {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             pointer-events: none;
             z-index: 1;
         }
         .balloon {
             position: absolute;
             bottom: -100px;
-            width: 60px;
-            height: 80px;
+            width: 60px; height: 80px;
             background: radial-gradient(circle at 30% 30%, #ff6b6b, #ee5a24);
             border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
             animation: floatUp 8s ease-in infinite;
@@ -362,27 +306,18 @@
         .balloon::after {
             content: '';
             position: absolute;
-            bottom: -10px;
-            left: 50%;
+            bottom: -10px; left: 50%;
             transform: translateX(-50%);
-            width: 2px;
-            height: 40px;
+            width: 2px; height: 40px;
             background: rgba(255,255,255,0.5);
         }
-        .balloon:nth-child(2) { left: 10%; animation-delay: 0s; background: radial-gradient(circle at 30% 30%, #f9ca24, #f0932b); }
-        .balloon:nth-child(3) { left: 25%; animation-delay: 1s; background: radial-gradient(circle at 30% 30%, #6ab04c, #badc58); }
-        .balloon:nth-child(4) { left: 45%; animation-delay: 2s; background: radial-gradient(circle at 30% 30%, #4834d4, #686de0); }
-        .balloon:nth-child(5) { left: 65%; animation-delay: 0.5s; background: radial-gradient(circle at 30% 30%, #eb4d4b, #ff7979); }
-        .balloon:nth-child(6) { left: 80%; animation-delay: 1.5s; background: radial-gradient(circle at 30% 30%, #f0932b, #ffbe76); }
-        .balloon:nth-child(7) { left: 90%; animation-delay: 2.5s; background: radial-gradient(circle at 30% 30%, #7ed6df, #22a6b3); }
         @keyframes floatUp {
             0% { transform: translateY(0) rotate(-5deg); opacity: 0.8; }
             100% { transform: translateY(-120vh) rotate(5deg); opacity: 0; }
         }
         .light {
             position: absolute;
-            width: 6px;
-            height: 6px;
+            width: 6px; height: 6px;
             background: #fff;
             border-radius: 50%;
             box-shadow: 0 0 10px #fff, 0 0 20px #f1c40f, 0 0 30px #f39c12;
@@ -393,7 +328,7 @@
             100% { opacity: 1; transform: scale(1.2); }
         }
 
-        /* --- Pantalla del collage --- */
+        /* --- Collage --- */
         #collage-screen {
             background: linear-gradient(135deg, #1a1a2e, #16213e);
             padding: 40px 20px;
@@ -435,39 +370,19 @@
         .collage-item:nth-child(6) { animation-delay: 0.6s; }
         .collage-item:nth-child(7) { animation-delay: 0.7s; }
         .collage-item:nth-child(8) { animation-delay: 0.8s; }
-        @keyframes zoomIn {
-            to { opacity: 1; transform: scale(1); }
-        }
+        @keyframes zoomIn { to { opacity: 1; transform: scale(1); } }
         .collage-item:hover {
             transform: scale(1.05) translateY(-10px);
             box-shadow: 0 20px 50px rgba(241, 196, 15, 0.3);
             z-index: 2;
         }
         .collage-item img {
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             object-fit: cover;
             display: block;
             transition: transform 0.4s ease;
         }
-        .collage-item:hover img {
-            transform: scale(1.1);
-        }
-        .collage-item::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
-            opacity: 0;
-            transition: opacity 0.4s;
-        }
-        .collage-item:hover::after {
-            opacity: 1;
-        }
-        /* Ajustes específicos para algunas fotos */
+        .collage-item:hover img { transform: scale(1.1); }
         .collage-item:nth-child(3) { grid-row: span 2; }
         .collage-item:nth-child(7) { grid-column: span 2; }
         @media (max-width: 600px) {
@@ -481,8 +396,8 @@
 </head>
 <body>
 
-    <!-- Botón de silencio (aparece cuando empieza la melodía) -->
-    <button id="mute-btn" class="mute-btn hidden" title="Silenciar / Activar melodía">🔊</button>
+    <!-- Botón de silencio -->
+    <button id="mute-btn" class="hidden" title="Silenciar / Activar melodía">🔊</button>
 
     <!-- Pantalla 1: Vela -->
     <div id="candle-screen" class="screen active">
@@ -515,7 +430,7 @@
             <p>Querida Sary,<br><br>
             Hoy es un día especial para celebrar a una persona increíble. Que este nuevo año de vida esté lleno de alegrías, risas, aventuras y momentos inolvidables. Sigue brillando con esa luz que te caracteriza y alcanzando todas tus metas.<br><br>
             ¡Disfruta tu día al máximo! 🎉🎂</p>
-            <button class="btn-continue" id="btn-continue">Continuar </button>
+            <button class="btn-continue" id="btn-continue">Continuar</button>
         </div>
     </div>
 
@@ -523,7 +438,6 @@
     <div id="collage-screen" class="screen">
         <h2 class="collage-title">Momentos Especiales de Sary ✨</h2>
         <div class="collage-grid">
-            <!-- Reemplaza las rutas con las rutas reales de tus imágenes -->
             <div class="collage-item"><img src="foto-1.png" alt="Recuerdo 1"></div>
             <div class="collage-item"><img src="foto-2.png" alt="Recuerdo 2"></div>
             <div class="collage-item"><img src="foto-6.png" alt="Recuerdo 3"></div>
@@ -536,31 +450,44 @@
     </div>
 
     <script>
-        // --- Lógica de Web Audio API para el soplido ---
-        function playBlowSound() {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if (!AudioContext) return;
-            const ctx = new AudioContext();
+        // ============================================================
+        //  AudioContext COMPARTIDO para soplido y melodía
+        // ============================================================
+        let audioCtx = null;
+        function getCtx() {
+            if (!audioCtx) {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (!AC) return null;
+                audioCtx = new AC();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
 
-            // Crear ruido blanco
-            const bufferSize = ctx.sampleRate * 1.5; // 1.5 segundos
+        // ============================================================
+        //  Sonido de soplido (Web Audio API)
+        // ============================================================
+        function playBlowSound() {
+            const ctx = getCtx();
+            if (!ctx) return;
+
+            const bufferSize = ctx.sampleRate * 1.5;
             const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
             const data = buffer.getChannelData(0);
             for (let i = 0; i < bufferSize; i++) {
                 data[i] = Math.random() * 2 - 1;
             }
-
             const noise = ctx.createBufferSource();
             noise.buffer = buffer;
 
-            // Filtro pasa-banda para simular el soplido
             const filter = ctx.createBiquadFilter();
             filter.type = 'bandpass';
             filter.frequency.setValueAtTime(400, ctx.currentTime);
             filter.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 1.2);
             filter.Q.value = 0.5;
 
-            // Ganancia envolvente
             const gain = ctx.createGain();
             gain.gain.setValueAtTime(0, ctx.currentTime);
             gain.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 0.1);
@@ -569,12 +496,129 @@
             noise.connect(filter);
             filter.connect(gain);
             gain.connect(ctx.destination);
-
             noise.start();
             noise.stop(ctx.currentTime + 1.5);
         }
 
-        // --- Elementos del DOM ---
+        // ============================================================
+        //  Melodía "Feliz Cumpleaños" con Web Audio API
+        // ============================================================
+        let musicStarted = false;
+        let musicGain = null;      // nodo maestro (para mute)
+        let musicMuted = false;
+        let musicSchedulerId = null;
+
+        function startMelody() {
+            if (musicStarted) return;
+            musicStarted = true;
+
+            const ctx = getCtx();
+            if (!ctx) {
+                console.warn('AudioContext no disponible');
+                return;
+            }
+
+            // 1) Mostrar botón de silencio
+            const muteBtn = document.getElementById('mute-btn');
+            if (muteBtn) muteBtn.classList.remove('hidden');
+
+            // 2) Nodo maestro con FADE-IN (0 → 0.15 en 2.5 s)
+            musicGain = ctx.createGain();
+            const now = ctx.currentTime;
+            musicGain.gain.setValueAtTime(0.0001, now);
+            musicGain.gain.exponentialRampToValueAtTime(0.15, now + 2.5);
+            musicGain.connect(ctx.destination);
+
+            // 3) Datos de la melodía: [frecuencia Hz, duración en beats]
+            //    (0.75 + 0.25 = negra con puntillo + 16ava, ritmo clásico)
+            const bpm = 100;
+            const beatDur = 60 / bpm;
+            const melody = [
+                // Hap-py Birth-day to you   (Do Do Re Do Fa Mi)
+                [261.63, 0.75], [261.63, 0.25], [293.66, 1], [261.63, 1], [349.23, 1], [329.63, 2],
+                // Hap-py Birth-day to you   (Do Do Re Do Sol Fa)
+                [261.63, 0.75], [261.63, 0.25], [293.66, 1], [261.63, 1], [392.00, 1], [349.23, 2],
+                // Hap-py Birth-day dear Sa-ry (Do Do Do' La Fa Mi Re)
+                [261.63, 0.75], [261.63, 0.25], [523.25, 1], [440.00, 1], [349.23, 1], [329.63, 1], [293.66, 2],
+                // Hap-py Birth-day to you   (Sib Sib La Fa Sol Fa)
+                [466.16, 0.75], [466.16, 0.25], [440.00, 1], [349.23, 1], [392.00, 1], [349.23, 2]
+            ];
+
+            const totalBeats = melody.reduce((s, n) => s + n[1], 0);
+            const iterationDur = totalBeats * beatDur;
+
+            // 4) Función que agenda UNA iteración completa
+            function scheduleIteration(startTime) {
+                let t = startTime;
+                for (const [freq, beats] of melody) {
+                    const dur = beats * beatDur;
+
+                    const osc = ctx.createOscillator();
+                    const env = ctx.createGain();
+
+                    // Timbre tipo piano (triángulo + un poco de seno)
+                    osc.type = 'triangle';
+                    osc.frequency.value = freq;
+
+                    // Envolvente ADSR simple
+                    env.gain.setValueAtTime(0, t);
+                    env.gain.linearRampToValueAtTime(0.6, t + 0.02);
+                    env.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.85);
+
+                    osc.connect(env);
+                    env.connect(musicGain);
+
+                    osc.start(t);
+                    osc.stop(t + dur);
+
+                    t += dur;
+                }
+                return t; // devuelve el tiempo donde termina esta iteración
+            }
+
+            // 5) Agendar 3 iteraciones de golpe y luego mantener colchón
+            let nextStart = ctx.currentTime + 0.15;
+            for (let i = 0; i < 3; i++) {
+                nextStart = scheduleIteration(nextStart);
+            }
+
+            // 6) Cada 3 s comprobar que siempre haya 2 iteraciones por delante
+            musicSchedulerId = setInterval(() => {
+                while (nextStart - ctx.currentTime < iterationDur * 2) {
+                    nextStart = scheduleIteration(nextStart);
+                }
+            }, 3000);
+        }
+
+        // ============================================================
+        //  Botón de silencio
+        // ============================================================
+        const muteBtn = document.getElementById('mute-btn');
+        if (muteBtn) {
+            muteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (!musicGain || !audioCtx) return;
+
+                musicMuted = !musicMuted;
+                const now = audioCtx.currentTime;
+                musicGain.gain.cancelScheduledValues(now);
+                musicGain.gain.setValueAtTime(musicGain.gain.value, now);
+
+                if (musicMuted) {
+                    musicGain.gain.linearRampToValueAtTime(0.0001, now + 0.4);
+                    muteBtn.textContent = '🔇';
+                    muteBtn.classList.add('muted');
+                } else {
+                    musicGain.gain.linearRampToValueAtTime(0.15, now + 0.4);
+                    muteBtn.textContent = '🔊';
+                    muteBtn.classList.remove('muted');
+                }
+            });
+        }
+
+        // ============================================================
+        //  Elementos del DOM
+        // ============================================================
         const candleScreen = document.getElementById('candle-screen');
         const flame = document.getElementById('flame');
         const smoke = document.getElementById('smoke');
@@ -584,25 +628,20 @@
         const cardScreen = document.getElementById('card-screen');
         const btnContinue = document.getElementById('btn-continue');
         const collageScreen = document.getElementById('collage-screen');
-        const muteBtn = document.getElementById('mute-btn');
 
-        // --- Lógica de la vela ---
+        // ============================================================
+        //  Lógica de la vela
+        // ============================================================
         candleScreen.addEventListener('click', () => {
-            // 1) Sonido de soplido
+            // 1) Soplido
             playBlowSound();
 
             // 2) Apagar llama
             flame.style.display = 'none';
             smoke.classList.add('active');
 
-            // 3) Desbloquear contexto de audio (dentro del gesto del usuario)
-            //    y luego, tras un pequeño delay, iniciar la melodía con fade-in
-            Tone.start().then(() => {
-                setTimeout(() => startPiano(), 900);
-            }).catch(err => {
-                console.warn('Tone.start error:', err);
-                setTimeout(() => startPiano(), 900);
-            });
+            // 3) Iniciar melodía tras el soplido (900 ms)
+            setTimeout(startMelody, 900);
 
             // 4) Transición al sobre
             setTimeout(() => {
@@ -611,7 +650,9 @@
             }, 800);
         });
 
-        // --- Lógica del sobre ---
+        // ============================================================
+        //  Lógica del sobre
+        // ============================================================
         envelopeWrapper.addEventListener('click', () => {
             envelope.classList.add('open');
             setTimeout(() => {
@@ -621,30 +662,22 @@
             }, 600);
         });
 
-        // --- Lógica del botón Continuar ---
+        // ============================================================
+        //  Botón Continuar
+        // ============================================================
         btnContinue.addEventListener('click', () => {
             cardScreen.classList.remove('active');
             collageScreen.classList.add('active');
             startConfetti();
         });
 
-        // --- Botón de silencio ---
-        let isMuted = false;
-        muteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            isMuted = !isMuted;
-            // Tone.Destination.mute silencia toda la salida de Tone.js
-            Tone.Destination.mute = isMuted;
-            muteBtn.textContent = isMuted ? '🔇' : '🔊';
-            muteBtn.classList.toggle('muted', isMuted);
-        });
-
-        // --- Confeti ---
+        // ============================================================
+        //  Confeti
+        // ============================================================
         function startConfetti() {
+            if (typeof confetti !== 'function') return;
             confetti({
-                particleCount: 150,
-                spread: 70,
-                origin: { y: 0.6 },
+                particleCount: 150, spread: 70, origin: { y: 0.6 },
                 colors: ['#f1c40f', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6']
             });
             setTimeout(() => {
@@ -653,92 +686,30 @@
             }, 300);
         }
 
-        // --- Melodía de piano (Feliz Cumpleaños) con Tone.js ---
-        let pianoStarted = false;
-        function startPiano() {
-            if (pianoStarted) return;
-            pianoStarted = true;
-
-            // Mostrar el botón de silencio
-            muteBtn.classList.remove('hidden');
-
-            // BPM y conversión de duraciones a segundos
-            const bpm = 90;
-            Tone.Transport.bpm.value = bpm;
-            const secPerBeat = 60 / bpm;
-            const durInBeats = { '16n': 0.25, '8n': 0.5, '4n': 1, '2n': 2, '1n': 4 };
-
-            // Sintetizador (sonido tipo piano suave)
-            const synth = new Tone.PolySynth(Tone.Synth, {
-                oscillator: { type: 'triangle' },
-                envelope: {
-                    attack: 0.02,
-                    decay: 0.1,
-                    sustain: 0.3,
-                    release: 1.2
-                }
-            });
-
-            // Volumen maestro con FADE-IN (de -60 dB a -12 dB en 2.5 s)
-            const masterVolume = new Tone.Volume(-60).toDestination();
-            synth.connect(masterVolume);
-            masterVolume.volume.rampTo(-12, 2.5);
-
-            // Melodía: [nota, duración]
-            const melodyData = [
-                ['C4', '8n'], ['C4', '8n'], ['D4', '4n'], ['C4', '4n'], ['F4', '4n'], ['E4', '2n'],
-                ['C4', '8n'], ['C4', '8n'], ['D4', '4n'], ['C4', '4n'], ['G4', '4n'], ['F4', '2n'],
-                ['C4', '8n'], ['C4', '8n'], ['C5', '4n'], ['A4', '4n'], ['F4', '4n'], ['E4', '4n'], ['D4', '2n'],
-                ['Bb4', '8n'], ['Bb4', '8n'], ['A4', '4n'], ['F4', '4n'], ['G4', '4n'], ['F4', '2n']
-            ];
-
-            // Construir eventos con TIEMPOS EXPLÍCITOS en segundos
-            // (esto es la corrección clave: antes se pasaba la nota como "tiempo",
-            //  lo que impedía que las notas se dispararan)
-            let currentTime = 0;
-            const events = [];
-            for (const [note, dur] of melodyData) {
-                events.push([currentTime, { note, duration: dur }]);
-                currentTime += durInBeats[dur] * secPerBeat;
-            }
-            const loopDuration = currentTime;
-
-            // Programar la melodía en el Transport
-            const part = new Tone.Part((time, value) => {
-                synth.triggerAttackRelease(value.note, value.duration, time);
-            }, events).start(0);
-            part.loop = true;
-            part.loopEnd = loopDuration;
-
-            // Arrancar el Transport si no está corriendo
-            if (Tone.Transport.state !== 'started') {
-                Tone.Transport.start();
-            }
-        }
-
-        // --- Generar globos y luces dinámicamente ---
+        // ============================================================
+        //  Globos y luces
+        // ============================================================
         document.addEventListener('DOMContentLoaded', () => {
             const balloonsContainer = document.getElementById('balloons');
             const lightsContainer = document.getElementById('lights');
 
             for (let i = 0; i < 10; i++) {
-                const balloon = document.createElement('div');
-                balloon.classList.add('balloon');
-                balloon.style.left = Math.random() * 100 + '%';
-                balloon.style.animationDelay = Math.random() * 5 + 's';
-                balloon.style.animationDuration = (6 + Math.random() * 6) + 's';
-                balloon.style.filter = `hue-rotate(${Math.random() * 360}deg)`;
-                balloonsContainer.appendChild(balloon);
+                const b = document.createElement('div');
+                b.classList.add('balloon');
+                b.style.left = Math.random() * 100 + '%';
+                b.style.animationDelay = Math.random() * 5 + 's';
+                b.style.animationDuration = (6 + Math.random() * 6) + 's';
+                b.style.filter = `hue-rotate(${Math.random() * 360}deg)`;
+                balloonsContainer.appendChild(b);
             }
-
             for (let i = 0; i < 30; i++) {
-                const light = document.createElement('div');
-                light.classList.add('light');
-                light.style.left = Math.random() * 100 + '%';
-                light.style.top = Math.random() * 100 + '%';
-                light.style.animationDelay = Math.random() * 3 + 's';
-                light.style.animationDuration = (1 + Math.random() * 2) + 's';
-                lightsContainer.appendChild(light);
+                const l = document.createElement('div');
+                l.classList.add('light');
+                l.style.left = Math.random() * 100 + '%';
+                l.style.top = Math.random() * 100 + '%';
+                l.style.animationDelay = Math.random() * 3 + 's';
+                l.style.animationDuration = (1 + Math.random() * 2) + 's';
+                lightsContainer.appendChild(l);
             }
         });
     </script>
