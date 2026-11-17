@@ -559,10 +559,11 @@
             flame.style.display = 'none';
             smoke.classList.add('active');
 
-            // 3) Iniciar la melodía de piano (Tone.js) justo después del soplido
+            // 3) Iniciar la melodía de piano (Tone.js) con fade-in,
+            //    tras un pequeño delay para que el soplido se escuche limpio
             setTimeout(() => {
                 startPiano();
-            }, 600); // 600 ms para dejar que el soplido se escuche
+            }, 900); // 900 ms para dejar respirar al soplido
 
             // 4) Transición al sobre después de un breve delay
             setTimeout(() => {
@@ -636,20 +637,27 @@
                     sustain: 0.3,
                     release: 1.2
                 }
-            }).toDestination();
+            });
 
             // Un poco de reverb para que suene más "bonito" y envolvente
             const reverb = new Tone.Reverb({
                 decay: 2.5,
                 preDelay: 0.01,
                 wet: 0.3
-            }).toDestination();
-            synth.connect(reverb);
+            });
 
-            synth.volume.value = -10; // Volumen moderado para que no sature
+            // Nodo de volumen maestro para controlar el FADE-IN
+            // Empieza en -Infinity (silencio total) y subirá poco a poco
+            const masterVolume = new Tone.Volume(-Infinity).toDestination();
+
+            // Cadena: synth -> reverb -> masterVolume -> destination
+            synth.connect(reverb);
+            reverb.connect(masterVolume);
+
+            // *** FADE-IN suave: sube el volumen a -10 dB en 2.5 segundos ***
+            masterVolume.volume.rampTo(-10, 2.5);
 
             // Melodía de "Feliz Cumpleaños" en una versión ligeramente más lenta y expresiva
-            // Notas: Do Do Re Do Fa Mi / Do Do Re Do Sol Fa / Do Do Do' La Fa Mi Re / Sib Sib La Fa Sol Fa
             const melody = [
                 { note: 'C4', duration: '8n' }, { note: 'C4', duration: '8n' },
                 { note: 'D4', duration: '4n' }, { note: 'C4', duration: '4n' },
