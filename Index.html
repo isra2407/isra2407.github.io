@@ -555,17 +555,21 @@
             // 1) Sonido de soplido (Web Audio API)
             playBlowSound();
 
-            // 2) Apagar llama
+            // 2) Desbloquear el contexto de Tone.js DENTRO del gesto del usuario
+            //    (esto garantiza que el navegador no bloquee la reproducción)
+            Tone.start();
+
+            // 3) Apagar llama
             flame.style.display = 'none';
             smoke.classList.add('active');
 
-            // 3) Iniciar la melodía de piano (Tone.js) con fade-in,
+            // 4) Iniciar la melodía de piano (Tone.js) con fade-in,
             //    tras un pequeño delay para que el soplido se escuche limpio
             setTimeout(() => {
                 startPiano();
-            }, 900); // 900 ms para dejar respirar al soplido
+            }, 900);
 
-            // 4) Transición al sobre después de un breve delay
+            // 5) Transición al sobre después de un breve delay
             setTimeout(() => {
                 candleScreen.classList.remove('active');
                 envelopeScreen.classList.add('active');
@@ -623,9 +627,6 @@
             if (pianoStarted) return;
             pianoStarted = true;
 
-            // Iniciar contexto de audio (debe ser dentro de un gesto del usuario)
-            Tone.start();
-
             // Sintetizador de piano: un sonido suave y cálido
             const synth = new Tone.PolySynth(Tone.Synth, {
                 oscillator: {
@@ -646,15 +647,16 @@
                 wet: 0.3
             });
 
-            // Nodo de volumen maestro para controlar el FADE-IN
-            // Empieza en -Infinity (silencio total) y subirá poco a poco
-            const masterVolume = new Tone.Volume(-Infinity).toDestination();
+            // Nodo de volumen maestro para el FADE-IN.
+            // OJO: usamos -60 dB (finito) en lugar de -Infinity,
+            // porque rampear desde -Infinity falla en Tone.js y deja el volumen en 0.
+            const masterVolume = new Tone.Volume(-60).toDestination();
 
             // Cadena: synth -> reverb -> masterVolume -> destination
             synth.connect(reverb);
             reverb.connect(masterVolume);
 
-            // *** FADE-IN suave: sube el volumen a -10 dB en 2.5 segundos ***
+            // *** FADE-IN suave: de -60 dB a -10 dB en 2.5 segundos ***
             masterVolume.volume.rampTo(-10, 2.5);
 
             // Melodía de "Feliz Cumpleaños" en una versión ligeramente más lenta y expresiva
