@@ -49,6 +49,38 @@
         }
         .hidden { display: none !important; }
 
+        /* --- Botón de silencio --- */
+        .mute-btn {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: #fff;
+            font-size: 1.4rem;
+            cursor: pointer;
+            z-index: 999;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            line-height: 1;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .mute-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.1);
+        }
+        .mute-btn.muted {
+            background: rgba(231,76,60,0.5);
+            border-color: rgba(231,76,60,0.8);
+        }
+
         /* --- Pantalla de la vela --- */
         #candle-screen {
             background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
@@ -449,6 +481,9 @@
 </head>
 <body>
 
+    <!-- Botón de silencio (aparece cuando empieza la melodía) -->
+    <button id="mute-btn" class="mute-btn hidden" title="Silenciar / Activar melodía">🔊</button>
+
     <!-- Pantalla 1: Vela -->
     <div id="candle-screen" class="screen active">
         <div class="candle-container" id="candle">
@@ -549,27 +584,27 @@
         const cardScreen = document.getElementById('card-screen');
         const btnContinue = document.getElementById('btn-continue');
         const collageScreen = document.getElementById('collage-screen');
+        const muteBtn = document.getElementById('mute-btn');
 
         // --- Lógica de la vela ---
         candleScreen.addEventListener('click', () => {
-            // 1) Sonido de soplido (Web Audio API)
+            // 1) Sonido de soplido
             playBlowSound();
 
-            // 2) Desbloquear el contexto de Tone.js DENTRO del gesto del usuario
-            //    (esto garantiza que el navegador no bloquee la reproducción)
-            Tone.start();
-
-            // 3) Apagar llama
+            // 2) Apagar llama
             flame.style.display = 'none';
             smoke.classList.add('active');
 
-            // 4) Iniciar la melodía de piano (Tone.js) con fade-in,
-            //    tras un pequeño delay para que el soplido se escuche limpio
-            setTimeout(() => {
-                startPiano();
-            }, 900);
+            // 3) Desbloquear contexto de audio (dentro del gesto del usuario)
+            //    y luego, tras un pequeño delay, iniciar la melodía con fade-in
+            Tone.start().then(() => {
+                setTimeout(() => startPiano(), 900);
+            }).catch(err => {
+                console.warn('Tone.start error:', err);
+                setTimeout(() => startPiano(), 900);
+            });
 
-            // 5) Transición al sobre después de un breve delay
+            // 4) Transición al sobre
             setTimeout(() => {
                 candleScreen.classList.remove('active');
                 envelopeScreen.classList.add('active');
@@ -579,11 +614,9 @@
         // --- Lógica del sobre ---
         envelopeWrapper.addEventListener('click', () => {
             envelope.classList.add('open');
-            // Transición a la tarjeta después de un breve delay
             setTimeout(() => {
                 envelopeScreen.classList.remove('active');
                 cardScreen.classList.add('active');
-                // Lanzar confeti al abrir la tarjeta
                 startConfetti();
             }, 600);
         });
@@ -592,8 +625,18 @@
         btnContinue.addEventListener('click', () => {
             cardScreen.classList.remove('active');
             collageScreen.classList.add('active');
-            // Lanzar confeti de nuevo
             startConfetti();
+        });
+
+        // --- Botón de silencio ---
+        let isMuted = false;
+        muteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            isMuted = !isMuted;
+            // Tone.Destination.mute silencia toda la salida de Tone.js
+            Tone.Destination.mute = isMuted;
+            muteBtn.textContent = isMuted ? '🔇' : '🔊';
+            muteBtn.classList.toggle('muted', isMuted);
         });
 
         // --- Confeti ---
@@ -604,34 +647,30 @@
                 origin: { y: 0.6 },
                 colors: ['#f1c40f', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6']
             });
-            // Ráfaga adicional
             setTimeout(() => {
-                confetti({
-                    particleCount: 100,
-                    angle: 60,
-                    spread: 55,
-                    origin: { x: 0 }
-                });
-                confetti({
-                    particleCount: 100,
-                    angle: 120,
-                    spread: 55,
-                    origin: { x: 1 }
-                });
+                confetti({ particleCount: 100, angle: 60, spread: 55, origin: { x: 0 } });
+                confetti({ particleCount: 100, angle: 120, spread: 55, origin: { x: 1 } });
             }, 300);
         }
 
-        // --- Melodía de piano con Tone.js (Feliz Cumpleaños) ---
+        // --- Melodía de piano (Feliz Cumpleaños) con Tone.js ---
         let pianoStarted = false;
         function startPiano() {
             if (pianoStarted) return;
             pianoStarted = true;
 
-            // Sintetizador de piano: un sonido suave y cálido
+            // Mostrar el botón de silencio
+            muteBtn.classList.remove('hidden');
+
+            // BPM y conversión de duraciones a segundos
+            const bpm = 90;
+            Tone.Transport.bpm.value = bpm;
+            const secPerBeat = 60 / bpm;
+            const durInBeats = { '16n': 0.25, '8n': 0.5, '4n': 1, '2n': 2, '1n': 4 };
+
+            // Sintetizador (sonido tipo piano suave)
             const synth = new Tone.PolySynth(Tone.Synth, {
-                oscillator: {
-                    type: 'triangle'
-                },
+                oscillator: { type: 'triangle' },
                 envelope: {
                     attack: 0.02,
                     decay: 0.1,
@@ -640,54 +679,41 @@
                 }
             });
 
-            // Un poco de reverb para que suene más "bonito" y envolvente
-            const reverb = new Tone.Reverb({
-                decay: 2.5,
-                preDelay: 0.01,
-                wet: 0.3
-            });
-
-            // Nodo de volumen maestro para el FADE-IN.
-            // OJO: usamos -60 dB (finito) en lugar de -Infinity,
-            // porque rampear desde -Infinity falla en Tone.js y deja el volumen en 0.
+            // Volumen maestro con FADE-IN (de -60 dB a -12 dB en 2.5 s)
             const masterVolume = new Tone.Volume(-60).toDestination();
+            synth.connect(masterVolume);
+            masterVolume.volume.rampTo(-12, 2.5);
 
-            // Cadena: synth -> reverb -> masterVolume -> destination
-            synth.connect(reverb);
-            reverb.connect(masterVolume);
-
-            // *** FADE-IN suave: de -60 dB a -10 dB en 2.5 segundos ***
-            masterVolume.volume.rampTo(-10, 2.5);
-
-            // Melodía de "Feliz Cumpleaños" en una versión ligeramente más lenta y expresiva
-            const melody = [
-                { note: 'C4', duration: '8n' }, { note: 'C4', duration: '8n' },
-                { note: 'D4', duration: '4n' }, { note: 'C4', duration: '4n' },
-                { note: 'F4', duration: '4n' }, { note: 'E4', duration: '2n' },
-
-                { note: 'C4', duration: '8n' }, { note: 'C4', duration: '8n' },
-                { note: 'D4', duration: '4n' }, { note: 'C4', duration: '4n' },
-                { note: 'G4', duration: '4n' }, { note: 'F4', duration: '2n' },
-
-                { note: 'C4', duration: '8n' }, { note: 'C4', duration: '8n' },
-                { note: 'C5', duration: '4n' }, { note: 'A4', duration: '4n' },
-                { note: 'F4', duration: '4n' }, { note: 'E4', duration: '4n' },
-                { note: 'D4', duration: '2n' },
-
-                { note: 'Bb4', duration: '8n' }, { note: 'Bb4', duration: '8n' },
-                { note: 'A4', duration: '4n' }, { note: 'F4', duration: '4n' },
-                { note: 'G4', duration: '4n' }, { note: 'F4', duration: '2n' }
+            // Melodía: [nota, duración]
+            const melodyData = [
+                ['C4', '8n'], ['C4', '8n'], ['D4', '4n'], ['C4', '4n'], ['F4', '4n'], ['E4', '2n'],
+                ['C4', '8n'], ['C4', '8n'], ['D4', '4n'], ['C4', '4n'], ['G4', '4n'], ['F4', '2n'],
+                ['C4', '8n'], ['C4', '8n'], ['C5', '4n'], ['A4', '4n'], ['F4', '4n'], ['E4', '4n'], ['D4', '2n'],
+                ['Bb4', '8n'], ['Bb4', '8n'], ['A4', '4n'], ['F4', '4n'], ['G4', '4n'], ['F4', '2n']
             ];
 
-            // Reproducir en bucle
-            const part = new Tone.Part((time, note) => {
-                synth.triggerAttackRelease(note.note, note.duration, time);
-            }, melody.map(n => [n.note, n])).start(0);
+            // Construir eventos con TIEMPOS EXPLÍCITOS en segundos
+            // (esto es la corrección clave: antes se pasaba la nota como "tiempo",
+            //  lo que impedía que las notas se dispararan)
+            let currentTime = 0;
+            const events = [];
+            for (const [note, dur] of melodyData) {
+                events.push([currentTime, { note, duration: dur }]);
+                currentTime += durInBeats[dur] * secPerBeat;
+            }
+            const loopDuration = currentTime;
 
+            // Programar la melodía en el Transport
+            const part = new Tone.Part((time, value) => {
+                synth.triggerAttackRelease(value.note, value.duration, time);
+            }, events).start(0);
             part.loop = true;
-            part.loopEnd = '4m'; // Ajustar según la duración total de la melodía
-            Tone.Transport.bpm.value = 90; // Un poco más lento para que sea más emotivo
-            Tone.Transport.start();
+            part.loopEnd = loopDuration;
+
+            // Arrancar el Transport si no está corriendo
+            if (Tone.Transport.state !== 'started') {
+                Tone.Transport.start();
+            }
         }
 
         // --- Generar globos y luces dinámicamente ---
@@ -695,7 +721,6 @@
             const balloonsContainer = document.getElementById('balloons');
             const lightsContainer = document.getElementById('lights');
 
-            // Crear 10 globos
             for (let i = 0; i < 10; i++) {
                 const balloon = document.createElement('div');
                 balloon.classList.add('balloon');
@@ -706,7 +731,6 @@
                 balloonsContainer.appendChild(balloon);
             }
 
-            // Crear 30 luces
             for (let i = 0; i < 30; i++) {
                 const light = document.createElement('div');
                 light.classList.add('light');
