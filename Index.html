@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <!-- Confeti (única librería externa) -->
+    <!-- Confeti (Única librería externa) -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
     <style>
         /* --- Estilos generales --- */
@@ -451,28 +451,18 @@
 
     <script>
         // ============================================================
-        //  AudioContext COMPARTIDO para soplido y melodía
+        //  Variables globales de Audio (Web Audio API Nativa)
         // ============================================================
         let audioCtx = null;
-        function getCtx() {
-            if (!audioCtx) {
-                const AC = window.AudioContext || window.webkitAudioContext;
-                if (!AC) return null;
-                audioCtx = new AC();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-            return audioCtx;
-        }
+        let musicGain = null;      
+        let musicMuted = false;
+        let musicStarted = false;
 
         // ============================================================
-        //  Sonido de soplido (Web Audio API)
+        //  Sonido de soplido
         // ============================================================
-        function playBlowSound() {
-            const ctx = getCtx();
+        function playBlowSound(ctx) {
             if (!ctx) return;
-
             const bufferSize = ctx.sampleRate * 1.5;
             const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
             const data = buffer.getChannelData(0);
@@ -501,66 +491,48 @@
         }
 
         // ============================================================
-        //  Melodía "Feliz Cumpleaños" con Web Audio API
+        //  Melodía "Feliz Cumpleaños"
         // ============================================================
-        let musicStarted = false;
-        let musicGain = null;      // nodo maestro (para mute)
-        let musicMuted = false;
-        let musicSchedulerId = null;
-
-        function startMelody() {
-            if (musicStarted) return;
+        function startMelody(ctx) {
+            if (musicStarted || !ctx) return;
             musicStarted = true;
 
-            const ctx = getCtx();
-            if (!ctx) {
-                console.warn('AudioContext no disponible');
-                return;
-            }
-
-            // 1) Mostrar botón de silencio
+            // Mostrar botón de silencio
             const muteBtn = document.getElementById('mute-btn');
             if (muteBtn) muteBtn.classList.remove('hidden');
 
-            // 2) Nodo maestro con FADE-IN (0 → 0.15 en 2.5 s)
+            // Nodo de ganancia maestro con Fade-in
             musicGain = ctx.createGain();
             const now = ctx.currentTime;
             musicGain.gain.setValueAtTime(0.0001, now);
-            musicGain.gain.exponentialRampToValueAtTime(0.15, now + 2.5);
+            musicGain.gain.exponentialRampToValueAtTime(0.15, now + 2.5); // Fade-in en 2.5s
             musicGain.connect(ctx.destination);
 
-            // 3) Datos de la melodía: [frecuencia Hz, duración en beats]
-            //    (0.75 + 0.25 = negra con puntillo + 16ava, ritmo clásico)
+            // Frecuencias de las notas (Do4=261.63, Re4=293.66, Mi4=329.63, Fa4=349.23, Sol4=392.00, La4=440.00, Sib4=466.16, Do5=523.25)
             const bpm = 100;
             const beatDur = 60 / bpm;
             const melody = [
-                // Hap-py Birth-day to you   (Do Do Re Do Fa Mi)
                 [261.63, 0.75], [261.63, 0.25], [293.66, 1], [261.63, 1], [349.23, 1], [329.63, 2],
-                // Hap-py Birth-day to you   (Do Do Re Do Sol Fa)
                 [261.63, 0.75], [261.63, 0.25], [293.66, 1], [261.63, 1], [392.00, 1], [349.23, 2],
-                // Hap-py Birth-day dear Sa-ry (Do Do Do' La Fa Mi Re)
                 [261.63, 0.75], [261.63, 0.25], [523.25, 1], [440.00, 1], [349.23, 1], [329.63, 1], [293.66, 2],
-                // Hap-py Birth-day to you   (Sib Sib La Fa Sol Fa)
                 [466.16, 0.75], [466.16, 0.25], [440.00, 1], [349.23, 1], [392.00, 1], [349.23, 2]
             ];
 
-            const totalBeats = melody.reduce((s, n) => s + n[1], 0);
+            const totalBeats = melody.reduce((sum, note) => sum + note[1], 0);
             const iterationDur = totalBeats * beatDur;
 
-            // 4) Función que agenda UNA iteración completa
+            // Programar una iteración completa
             function scheduleIteration(startTime) {
                 let t = startTime;
                 for (const [freq, beats] of melody) {
                     const dur = beats * beatDur;
-
                     const osc = ctx.createOscillator();
                     const env = ctx.createGain();
 
-                    // Timbre tipo piano (triángulo + un poco de seno)
-                    osc.type = 'triangle';
+                    osc.type = 'triangle'; // Timbre suave tipo piano
                     osc.frequency.value = freq;
 
-                    // Envolvente ADSR simple
+                    // Envolvente de nota (Ataque, Caída, Sustain, Release)
                     env.gain.setValueAtTime(0, t);
                     env.gain.linearRampToValueAtTime(0.6, t + 0.02);
                     env.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.85);
@@ -570,20 +542,19 @@
 
                     osc.start(t);
                     osc.stop(t + dur);
-
                     t += dur;
                 }
-                return t; // devuelve el tiempo donde termina esta iteración
+                return t;
             }
 
-            // 5) Agendar 3 iteraciones de golpe y luego mantener colchón
+            // Agendar las primeras 3 iteraciones
             let nextStart = ctx.currentTime + 0.15;
             for (let i = 0; i < 3; i++) {
                 nextStart = scheduleIteration(nextStart);
             }
 
-            // 6) Cada 3 s comprobar que siempre haya 2 iteraciones por delante
-            musicSchedulerId = setInterval(() => {
+            // Mantener la música en bucle asegurando que siempre haya 2 iteraciones por delante
+            setInterval(() => {
                 while (nextStart - ctx.currentTime < iterationDur * 2) {
                     nextStart = scheduleIteration(nextStart);
                 }
@@ -591,7 +562,7 @@
         }
 
         // ============================================================
-        //  Botón de silencio
+        //  Control de Silencio
         // ============================================================
         const muteBtn = document.getElementById('mute-btn');
         if (muteBtn) {
@@ -617,7 +588,7 @@
         }
 
         // ============================================================
-        //  Elementos del DOM
+        //  Interacción con la Vela (Desbloqueo de Audio)
         // ============================================================
         const candleScreen = document.getElementById('candle-screen');
         const flame = document.getElementById('flame');
@@ -629,21 +600,27 @@
         const btnContinue = document.getElementById('btn-continue');
         const collageScreen = document.getElementById('collage-screen');
 
-        // ============================================================
-        //  Lógica de la vela
-        // ============================================================
         candleScreen.addEventListener('click', () => {
-            // 1) Soplido
-            playBlowSound();
+            // 1) Inicialización síncrona (Clave para evitar el bloqueo del navegador)
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (!audioCtx && AC) {
+                audioCtx = new AC();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
 
-            // 2) Apagar llama
+            // 2) Sonido de soplido
+            playBlowSound(audioCtx);
+
+            // 3) Apagar llama
             flame.style.display = 'none';
             smoke.classList.add('active');
 
-            // 3) Iniciar melodía tras el soplido (900 ms)
-            setTimeout(startMelody, 900);
+            // 4) Iniciar melodía en diferido (Usando el ctx que YA está desbloqueado)
+            setTimeout(() => startMelody(audioCtx), 900);
 
-            // 4) Transición al sobre
+            // 5) Transición al sobre
             setTimeout(() => {
                 candleScreen.classList.remove('active');
                 envelopeScreen.classList.add('active');
