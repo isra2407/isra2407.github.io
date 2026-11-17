@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feliz Cumpleaños, Sary</title>
+    <!-- Fuentes de Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Librerías externas -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        /* --- Estilos generales --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #0a0a0a;
+            color: #fff;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.8s ease;
+        }
+        .screen {
+            display: none;
+            width: 100%;
+            min-height: 100vh;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 20px;
+            position: relative;
+        }
+        .screen.active {
+            display: flex;
+            animation: fadeIn 1s ease forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hidden { display: none !important; }
+
+        /* --- Pantalla de la vela --- */
+        #candle-screen {
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
+            cursor: pointer;
+        }
+        .candle-container {
+            position: relative;
+            width: 120px;
+            height: 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            transition: transform 0.3s;
+        }
+        .candle-container:hover { transform: scale(1.05); }
+        .flame {
+            width: 30px;
+            height: 50px;
+            background: radial-gradient(ellipse at 50% 100%, #ffcc00 0%, #ff6600 60%, transparent 100%);
+            border-radius: 50% 50% 20% 20%;
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: flicker 0.15s infinite alternate;
+            box-shadow: 0 0 30px #ff9900, 0 0 60px #ff6600;
+            z-index: 2;
+        }
+        .flame::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 10px;
+            height: 15px;
+            background: #fff;
+            border-radius: 50%;
+            filter: blur(4px);
+        }
+        @keyframes flicker {
+            0% { transform: translateX(-50%) scale(1) rotate(-2deg); opacity: 0.9; }
+            100% { transform: translateX(-50%) scale(1.1) rotate(2deg); opacity: 1; }
+        }
+        .wax {
+            width: 40px;
+            height: 150px;
+            background: linear-gradient(to bottom, #f5e6d3, #e0c9a6);
+            border-radius: 5px 5px 0 0;
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        .wax::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 45px;
+            height: 10px;
+            background: #e0c9a6;
+            border-radius: 50%;
+        }
+        .wick {
+            width: 4px;
+            height: 20px;
+            background: #333;
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 2px;
+            z-index: 2;
+        }
+        .smoke {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            background: rgba(200, 200, 200, 0.3);
+            border-radius: 50%;
+            filter: blur(8px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease;
+        }
+        .smoke.active {
+            animation: smokeUp 2s ease-out forwards;
+        }
+        @keyframes smokeUp {
+            0% { opacity: 1; top: -30px; transform: translateX(-50%) scale(1); }
+            100% { opacity: 0; top: -100px; transform: translateX(-50%) scale(3); }
+        }
+        .candle-hint {
+            margin-top: 40px;
+            font-size: 1.2rem;
+            color: #ccc;
+            letter-spacing: 2px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        /* --- Pantalla del sobre --- */
+        #envelope-screen {
+            background: linear-gradient(135deg, #1e1e2f, #2a2a40);
+        }
+        .envelope-wrapper {
+            position: relative;
+            width: 300px;
+            height: 200px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            animation: float 3s ease-in-out infinite;
+        }
+        .envelope-wrapper:hover { transform: scale(1.05); }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        .envelope {
+            width: 100%;
+            height: 100%;
+            background: #f5e6d3;
+            border-radius: 0 0 10px 10px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+        .envelope::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-left: 150px solid transparent;
+            border-right: 150px solid transparent;
+            border-top: 100px solid #e0c9a6;
+            z-index: 2;
+            transition: transform 0.6s ease;
+        }
+        .envelope.open::before {
+            transform: rotateX(180deg);
+            transform-origin: top;
+        }
+        .envelope-flap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        .envelope-flap::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 150px solid transparent;
+            border-right: 150px solid transparent;
+            border-top: 100px solid #f5e6d3;
+        }
+        .seal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, #e74c3c, #c0392b);
+            border-radius: 50%;
+            z-index: 3;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            color: #fff;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: transform 0.3s;
+        }
+        .envelope-wrapper:hover .seal { transform: translate(-50%, -50%) scale(1.1); }
+        .envelope-hint {
+            margin-top: 40px;
+            font-size: 1.2rem;
+            color: #ccc;
+            letter-spacing: 2px;
+            animation: pulse 2s infinite;
+        }
+
+        /* --- Pantalla de la tarjeta --- */
+        #card-screen {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            overflow: hidden;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 50px 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            animation: cardEntry 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            transform: scale(0.8);
+            opacity: 0;
+        }
+        @keyframes cardEntry {
+            to { transform: scale(1); opacity: 1; }
+        }
+        .card h1 {
+            font-family: 'Great Vibes', cursive;
+            font-size: 3.5rem;
+            color: #b57edc;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .card h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #b57edc;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+        .card p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #555;
+            margin-bottom: 30px;
+        }
+        .card .btn-continue {
+            background: linear-gradient(45deg, #e74c3c, #f39c12);
+            color: #fff;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+        .card .btn-continue:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 10px 25px rgba(231, 76, 60, 0.6);
+        }
+        /* Globos y luces de fondo */
+        .balloons-container, .lights-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .balloon {
+            position: absolute;
+            bottom: -100px;
+            width: 60px;
+            height: 80px;
+            background: radial-gradient(circle at 30% 30%, #ff6b6b, #ee5a24);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            animation: floatUp 8s ease-in infinite;
+            opacity: 0.8;
+        }
+        .balloon::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 40px;
+            background: rgba(255,255,255,0.5);
+        }
+        .balloon:nth-child(2) { left: 10%; animation-delay: 0s; background: radial-gradient(circle at 30% 30%, #f9ca24, #f0932b); }
+        .balloon:nth-child(3) { left: 25%; animation-delay: 1s; background: radial-gradient(circle at 30% 30%, #6ab04c, #badc58); }
+        .balloon:nth-child(4) { left: 45%; animation-delay: 2s; background: radial-gradient(circle at 30% 30%, #4834d4, #686de0); }
+        .balloon:nth-child(5) { left: 65%; animation-delay: 0.5s; background: radial-gradient(circle at 30% 30%, #eb4d4b, #ff7979); }
+        .balloon:nth-child(6) { left: 80%; animation-delay: 1.5s; background: radial-gradient(circle at 30% 30%, #f0932b, #ffbe76); }
+        .balloon:nth-child(7) { left: 90%; animation-delay: 2.5s; background: radial-gradient(circle at 30% 30%, #7ed6df, #22a6b3); }
+        @keyframes floatUp {
+            0% { transform: translateY(0) rotate(-5deg); opacity: 0.8; }
+            100% { transform: translateY(-120vh) rotate(5deg); opacity: 0; }
+        }
+        .light {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #fff, 0 0 20px #f1c40f, 0 0 30px #f39c12;
+            animation: twinkle 1.5s infinite alternate;
+        }
+        @keyframes twinkle {
+            0% { opacity: 0.2; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* --- Pantalla del collage --- */
+        #collage-screen {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 40px 20px;
+            align-items: flex-start;
+        }
+        .collage-title {
+            font-family: 'Great Vibes', cursive;
+            font-size: 3rem;
+            color: #f1c40f;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px rgba(241, 196, 15, 0.5);
+            text-align: center;
+        }
+        .collage-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .collage-item {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            cursor: pointer;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+            animation: zoomIn 0.6s ease forwards;
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        .collage-item:nth-child(1) { animation-delay: 0.1s; }
+        .collage-item:nth-child(2) { animation-delay: 0.2s; }
+        .collage-item:nth-child(3) { animation-delay: 0.3s; }
+        .collage-item:nth-child(4) { animation-delay: 0.4s; }
+        .collage-item:nth-child(5) { animation-delay: 0.5s; }
+        .collage-item:nth-child(6) { animation-delay: 0.6s; }
+        .collage-item:nth-child(7) { animation-delay: 0.7s; }
+        .collage-item:nth-child(8) { animation-delay: 0.8s; }
+        @keyframes zoomIn {
+            to { opacity: 1; transform: scale(1); }
+        }
+        .collage-item:hover {
+            transform: scale(1.05) translateY(-10px);
+            box-shadow: 0 20px 50px rgba(241, 196, 15, 0.3);
+            z-index: 2;
+        }
+        .collage-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.4s ease;
+        }
+        .collage-item:hover img {
+            transform: scale(1.1);
+        }
+        .collage-item::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        .collage-item:hover::after {
+            opacity: 1;
+        }
+        /* Ajustes específicos para algunas fotos */
+        .collage-item:nth-child(3) { grid-row: span 2; }
+        .collage-item:nth-child(7) { grid-column: span 2; }
+        @media (max-width: 600px) {
+            .collage-grid { grid-template-columns: 1fr 1fr; }
+            .collage-item:nth-child(3) { grid-row: span 1; }
+            .collage-item:nth-child(7) { grid-column: span 1; }
+            .card h1 { font-size: 2.5rem; }
+            .card h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Pantalla 1: Vela -->
+    <div id="candle-screen" class="screen active">
+        <div class="candle-container" id="candle">
+            <div class="flame" id="flame"></div>
+            <div class="smoke" id="smoke"></div>
+            <div class="wick"></div>
+            <div class="wax"></div>
+        </div>
+        <p class="candle-hint">Toca la llama para soplar la vela 🕯️</p>
+    </div>
+
+    <!-- Pantalla 2: Sobre -->
+    <div id="envelope-screen" class="screen">
+        <div class="envelope-wrapper" id="envelope-wrapper">
+            <div class="envelope" id="envelope">
+                <div class="seal">🤍</div>
+            </div>
+        </div>
+        <p class="envelope-hint">Haz clic para abrir la carta ✉️</p>
+    </div>
+
+    <!-- Pantalla 3: Tarjeta -->
+    <div id="card-screen" class="screen">
+        <div class="balloons-container" id="balloons"></div>
+        <div class="lights-container" id="lights"></div>
+        <div class="card">
+            <h1>¡Feliz Cumpleaños!</h1>
+            <h2>Sarahí Rodríguez Guzmán</h2>
+            <p>Querida Sary,<br><br>
+            Hoy es un día especial para celebrar a una persona increíble. Que este nuevo año de vida esté lleno de alegrías, risas, aventuras y momentos inolvidables. Sigue brillando con esa luz que te caracteriza y alcanzando todas tus metas.<br><br>
+            ¡Disfruta tu día al máximo! 🎉🎂</p>
+            <button class="btn-continue" id="btn-continue">Continuar </button>
+        </div>
+    </div>
+
+    <!-- Pantalla 4: Collage -->
+    <div id="collage-screen" class="screen">
+        <h2 class="collage-title">Momentos Especiales de Sary ✨</h2>
+        <div class="collage-grid">
+            <!-- Reemplaza las rutas con las rutas reales de tus imágenes -->
+            <div class="collage-item"><img src="foto-1.png" alt="Recuerdo 1"></div>
+            <div class="collage-item"><img src="foto-2.png" alt="Recuerdo 2"></div>
+            <div class="collage-item"><img src="foto-6.png" alt="Recuerdo 3"></div>
+            <div class="collage-item"><img src="foto-4.png" alt="Recuerdo 4"></div>
+            <div class="collage-item"><img src="foto-5.png" alt="Recuerdo 5"></div>
+            <div class="collage-item"><img src="foto-3.png" alt="Recuerdo 6"></div>
+            <div class="collage-item"><img src="foto-7.png" alt="Recuerdo 7"></div>
+            <div class="collage-item"><img src="foto-8.png" alt="Recuerdo 8"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- Lógica de Web Audio API para el soplido ---
+        function playBlowSound() {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            
+            // Crear ruido blanco
+            const bufferSize = ctx.sampleRate * 1.5; // 1.5 segundos
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+            
+            // Filtro pasa-banda para simular el soplido
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(400, ctx.currentTime);
+            filter.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 1.2);
+            filter.Q.value = 0.5;
+            
+            // Ganancia envolvente
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(0, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
+            
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            
+            noise.start();
+            noise.stop(ctx.currentTime + 1.5);
+        }
+
+        // --- Elementos del DOM ---
+        const candleScreen = document.getElementById('candle-screen');
+        const flame = document.getElementById('flame');
+        const smoke = document.getElementById('smoke');
+        const envelopeScreen = document.getElementById('envelope-screen');
+        const envelopeWrapper = document.getElementById('envelope-wrapper');
+        const envelope = document.getElementById('envelope');
+        const cardScreen = document.getElementById('card-screen');
+        const btnContinue = document.getElementById('btn-continue');
+        const collageScreen = document.getElementById('collage-screen');
+
+        // --- Lógica de la vela ---
+        candleScreen.addEventListener('click', () => {
+            // Reproducir sonido de soplido
+            playBlowSound();
+            
+            // Apagar llama
+            flame.style.display = 'none';
+            smoke.classList.add('active');
+            
+            // Transición al sobre después de un breve delay
+            setTimeout(() => {
+                candleScreen.classList.remove('active');
+                envelopeScreen.classList.add('active');
+            }, 800);
+        });
+
+        // --- Lógica del sobre ---
+        envelopeWrapper.addEventListener('click', () => {
+            envelope.classList.add('open');
+            // Transición a la tarjeta después de un breve delay
+            setTimeout(() => {
+                envelopeScreen.classList.remove('active');
+                cardScreen.classList.add('active');
+                // Lanzar confeti al abrir la tarjeta
+                startConfetti();
+                startPiano();
+            }, 600);
+        });
+
+        // --- Lógica del botón Continuar ---
+        btnContinue.addEventListener('click', () => {
+            cardScreen.classList.remove('active');
+            collageScreen.classList.add('active');
+            // Lanzar confeti de nuevo
+            startConfetti();
+        });
+
+        // --- Confeti ---
+        function startConfetti() {
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#f1c40f', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6']
+            });
+            // Ráfaga adicional
+            setTimeout(() => {
+                confetti({
+                    particleCount: 100,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 }
+                });
+                confetti({
+                    particleCount: 100,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 }
+                });
+            }, 300);
+        }
+
+        // --- Música de piano con Tone.js ---
+        let pianoStarted = false;
+        function startPiano() {
+            if (pianoStarted) return;
+            pianoStarted = true;
+            
+            // Iniciar contexto de audio
+            Tone.start();
+            
+            // Sintetizador de piano
+            const synth = new Tone.PolySynth(Tone.Synth, {
+                oscillator: {
+                    type: 'triangle'
+                },
+                envelope: {
+                    attack: 0.02,
+                    decay: 0.1,
+                    sustain: 0.3,
+                    release: 1
+                }
+            }).toDestination();
+            synth.volume.value = -8; // Volumen moderado
+            
+            // Melodía de Feliz Cumpleaños (notas y duraciones)
+            // Do Do Re Do Fa Mi
+            // Do Do Re Do Sol Fa
+            // Do Do Do' La Fa Mi Re
+            // Sib Sib La Fa Sol Fa
+            const melody = [
+                { note: 'C4', duration: '8n' }, { note: 'C4', duration: '8n' },
+                { note: 'D4', duration: '4n' }, { note: 'C4', duration: '4n' },
+                { note: 'F4', duration: '4n' }, { note: 'E4', duration: '2n' },
+                { note: 'C4', duration: '8n' }, { note: 'C4', duration: '8n' },
+                { note: 'D4', duration: '4n' }, { note: 'C4', duration: '4n' },
+                { note: 'G4', duration: '4n' }, { note: 'F4', duration: '2n' },
+                { note: 'C4', duration: '8n' }, { note: 'C4', duration: '8n' },
+                { note: 'C5', duration: '4n' }, { note: 'A4', duration: '4n' },
+                { note: 'F4', duration: '4n' }, { note: 'E4', duration: '4n' },
+                { note: 'D4', duration: '2n' },
+                { note: 'Bb4', duration: '8n' }, { note: 'Bb4', duration: '8n' },
+                { note: 'A4', duration: '4n' }, { note: 'F4', duration: '4n' },
+                { note: 'G4', duration: '4n' }, { note: 'F4', duration: '2n' }
+            ];
+            
+            // Reproducir en bucle
+            const part = new Tone.Part((time, note) => {
+                synth.triggerAttackRelease(note.note, note.duration, time);
+            }, melody.map(n => [n.note, n])).start(0);
+            
+            part.loop = true;
+            part.loopEnd = '4m'; // Ajustar según la duración total
+            Tone.Transport.bpm.value = 100;
+            Tone.Transport.start();
+        }
+
+        // --- Generar globos y luces dinámicamente ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const balloonsContainer = document.getElementById('balloons');
+            const lightsContainer = document.getElementById('lights');
+            
+            // Crear 10 globos
+            for (let i = 0; i < 10; i++) {
+                const balloon = document.createElement('div');
+                balloon.classList.add('balloon');
+                balloon.style.left = Math.random() * 100 + '%';
+                balloon.style.animationDelay = Math.random() * 5 + 's';
+                balloon.style.animationDuration = (6 + Math.random() * 6) + 's';
+                balloon.style.filter = `hue-rotate(${Math.random() * 360}deg)`;
+                balloonsContainer.appendChild(balloon);
+            }
+            
+            // Crear 30 luces
+            for (let i = 0; i < 30; i++) {
+                const light = document.createElement('div');
+                light.classList.add('light');
+                light.style.left = Math.random() * 100 + '%';
+                light.style.top = Math.random() * 100 + '%';
+                light.style.animationDelay = Math.random() * 3 + 's';
+                light.style.animationDuration = (1 + Math.random() * 2) + 's';
+                lightsContainer.appendChild(light);
+            }
+        });
+    </script>
+ <audio id="cancion" src="cancion.mp3" preload="auto"></audio>
+</body>
+</html>
