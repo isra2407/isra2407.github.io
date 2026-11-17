@@ -469,9 +469,8 @@
         </div>
         <p class="envelope-hint">Haz clic para abrir la carta ✉️</p>
     </div>
-   
 
-    <!-- Pantalla 3: Tarjeta --> 
+    <!-- Pantalla 3: Tarjeta -->
     <div id="card-screen" class="screen">
         <div class="balloons-container" id="balloons"></div>
         <div class="lights-container" id="lights"></div>
@@ -500,14 +499,17 @@
             <div class="collage-item"><img src="foto-8.png" alt="Recuerdo 8"></div>
         </div>
     </div>
-           <audio id="cancion" src="cancion.mp3" preload="auto">   </audio>  
+
+    <!-- Audio: la canción se reproduce al soplar la vela -->
+    <audio id="cancion" src="cancion.mp3" preload="auto" loop></audio>
+
     <script>
         // --- Lógica de Web Audio API para el soplido ---
         function playBlowSound() {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             if (!AudioContext) return;
             const ctx = new AudioContext();
-            
+
             // Crear ruido blanco
             const bufferSize = ctx.sampleRate * 1.5; // 1.5 segundos
             const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
@@ -515,27 +517,27 @@
             for (let i = 0; i < bufferSize; i++) {
                 data[i] = Math.random() * 2 - 1;
             }
-            
+
             const noise = ctx.createBufferSource();
             noise.buffer = buffer;
-            
+
             // Filtro pasa-banda para simular el soplido
             const filter = ctx.createBiquadFilter();
             filter.type = 'bandpass';
             filter.frequency.setValueAtTime(400, ctx.currentTime);
             filter.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 1.2);
             filter.Q.value = 0.5;
-            
+
             // Ganancia envolvente
             const gain = ctx.createGain();
             gain.gain.setValueAtTime(0, ctx.currentTime);
             gain.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 0.1);
             gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
-            
+
             noise.connect(filter);
             filter.connect(gain);
             gain.connect(ctx.destination);
-            
+
             noise.start();
             noise.stop(ctx.currentTime + 1.5);
         }
@@ -550,17 +552,43 @@
         const cardScreen = document.getElementById('card-screen');
         const btnContinue = document.getElementById('btn-continue');
         const collageScreen = document.getElementById('collage-screen');
+        const cancion = document.getElementById('cancion');   // <-- NUEVO
 
         // --- Lógica de la vela ---
         candleScreen.addEventListener('click', () => {
-            // Reproducir sonido de soplido
+            // 1) Sonido de soplido (Web Audio API)
             playBlowSound();
-            
-            // Apagar llama
+
+            // 2) Reproducir la canción DENTRO del gesto del usuario (evita bloqueo de autoplay)
+            //    Arranca con volumen 0 y hace fade-in después del soplido.
+            if (cancion) {
+                cancion.currentTime = 0;
+                cancion.volume = 0;
+                const p = cancion.play();
+                if (p !== undefined) {
+                    p.catch(err => console.warn('El navegador bloqueó la reproducción:', err));
+                }
+
+                // Fade-in de ~1.5 s, arrancando después del soplido
+                setTimeout(() => {
+                    let v = 0;
+                    const fade = setInterval(() => {
+                        v += 0.05;
+                        if (v >= 0.6) {          // volumen final 60 %
+                            cancion.volume = 0.6;
+                            clearInterval(fade);
+                        } else {
+                            cancion.volume = v;
+                        }
+                    }, 100);
+                }, 1200);
+            }
+
+            // 3) Apagar llama
             flame.style.display = 'none';
             smoke.classList.add('active');
-            
-            // Transición al sobre después de un breve delay
+
+            // 4) Transición al sobre después de un breve delay
             setTimeout(() => {
                 candleScreen.classList.remove('active');
                 envelopeScreen.classList.add('active');
@@ -576,7 +604,7 @@
                 cardScreen.classList.add('active');
                 // Lanzar confeti al abrir la tarjeta
                 startConfetti();
-                startPiano();
+                // startPiano();   // <-- COMENTADO: descomenta si quieres piano en vez de (o junto a) la canción
             }, 600);
         });
 
@@ -613,15 +641,15 @@
             }, 300);
         }
 
-        // --- Música de piano con Tone.js ---
+        // --- Música de piano con Tone.js (opcional) ---
         let pianoStarted = false;
         function startPiano() {
             if (pianoStarted) return;
             pianoStarted = true;
-            
+
             // Iniciar contexto de audio
             Tone.start();
-            
+
             // Sintetizador de piano
             const synth = new Tone.PolySynth(Tone.Synth, {
                 oscillator: {
@@ -635,12 +663,8 @@
                 }
             }).toDestination();
             synth.volume.value = -8; // Volumen moderado
-            
+
             // Melodía de Feliz Cumpleaños (notas y duraciones)
-            // Do Do Re Do Fa Mi
-            // Do Do Re Do Sol Fa
-            // Do Do Do' La Fa Mi Re
-            // Sib Sib La Fa Sol Fa
             const melody = [
                 { note: 'C4', duration: '8n' }, { note: 'C4', duration: '8n' },
                 { note: 'D4', duration: '4n' }, { note: 'C4', duration: '4n' },
@@ -656,12 +680,12 @@
                 { note: 'A4', duration: '4n' }, { note: 'F4', duration: '4n' },
                 { note: 'G4', duration: '4n' }, { note: 'F4', duration: '2n' }
             ];
-            
+
             // Reproducir en bucle
             const part = new Tone.Part((time, note) => {
                 synth.triggerAttackRelease(note.note, note.duration, time);
             }, melody.map(n => [n.note, n])).start(0);
-            
+
             part.loop = true;
             part.loopEnd = '4m'; // Ajustar según la duración total
             Tone.Transport.bpm.value = 100;
@@ -672,7 +696,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const balloonsContainer = document.getElementById('balloons');
             const lightsContainer = document.getElementById('lights');
-            
+
             // Crear 10 globos
             for (let i = 0; i < 10; i++) {
                 const balloon = document.createElement('div');
@@ -683,7 +707,7 @@
                 balloon.style.filter = `hue-rotate(${Math.random() * 360}deg)`;
                 balloonsContainer.appendChild(balloon);
             }
-            
+
             // Crear 30 luces
             for (let i = 0; i < 30; i++) {
                 const light = document.createElement('div');
