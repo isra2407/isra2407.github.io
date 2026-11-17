@@ -461,8 +461,7 @@
     </div>
 
     <!-- Pantalla 2: Sobre -->
-         <audio id="cancion" src="cancion.mp3" preload="auto">
-             
+         <audio id="cancion" src="cancion.mp3" preload="auto">  
     <div id="envelope-screen" class="screen">
         <div class="envelope-wrapper" id="envelope-wrapper">
             <div class="envelope" id="envelope">
@@ -471,8 +470,10 @@
         </div>
         <p class="envelope-hint">Haz clic para abrir la carta ✉️</p>
     </div>
+    </audio>
 
     <!-- Pantalla 3: Tarjeta -->
+     <audio id="cancion" src="cancion.mp3" preload="auto"> 
     <div id="card-screen" class="screen">
         <div class="balloons-container" id="balloons"></div>
         <div class="lights-container" id="lights"></div>
@@ -485,8 +486,9 @@
             <button class="btn-continue" id="btn-continue">Continuar </button>
         </div>
     </div>
-
+ </audio>
     <!-- Pantalla 4: Collage -->
+    <audio id="cancion" src="cancion.mp3" preload="auto"> 
     <div id="collage-screen" class="screen">
         <h2 class="collage-title">Momentos Especiales de Sary ✨</h2>
         <div class="collage-grid">
@@ -501,8 +503,8 @@
             <div class="collage-item"><img src="foto-8.png" alt="Recuerdo 8"></div>
         </div>
     </div>
-             </audio>
-
+         </audio>
+            
     <script>
         // --- Lógica de Web Audio API para el soplido ---
         function playBlowSound() {
