@@ -500,9 +500,6 @@
         </div>
     </div>
 
-    <!-- Audio: la canción se reproduce al soplar la vela -->
-    <audio id="cancion" src="cancion.mp3" preload="auto" loop></audio>
-
     <script>
         // --- Lógica de Web Audio API para el soplido ---
         function playBlowSound() {
@@ -552,41 +549,20 @@
         const cardScreen = document.getElementById('card-screen');
         const btnContinue = document.getElementById('btn-continue');
         const collageScreen = document.getElementById('collage-screen');
-        const cancion = document.getElementById('cancion');   // <-- NUEVO
 
         // --- Lógica de la vela ---
         candleScreen.addEventListener('click', () => {
             // 1) Sonido de soplido (Web Audio API)
             playBlowSound();
 
-            // 2) Reproducir la canción DENTRO del gesto del usuario (evita bloqueo de autoplay)
-            //    Arranca con volumen 0 y hace fade-in después del soplido.
-            if (cancion) {
-                cancion.currentTime = 0;
-                cancion.volume = 0;
-                const p = cancion.play();
-                if (p !== undefined) {
-                    p.catch(err => console.warn('El navegador bloqueó la reproducción:', err));
-                }
-
-                // Fade-in de ~1.5 s, arrancando después del soplido
-                setTimeout(() => {
-                    let v = 0;
-                    const fade = setInterval(() => {
-                        v += 0.05;
-                        if (v >= 0.6) {          // volumen final 60 %
-                            cancion.volume = 0.6;
-                            clearInterval(fade);
-                        } else {
-                            cancion.volume = v;
-                        }
-                    }, 100);
-                }, 1200);
-            }
-
-            // 3) Apagar llama
+            // 2) Apagar llama
             flame.style.display = 'none';
             smoke.classList.add('active');
+
+            // 3) Iniciar la melodía de piano (Tone.js) justo después del soplido
+            setTimeout(() => {
+                startPiano();
+            }, 600); // 600 ms para dejar que el soplido se escuche
 
             // 4) Transición al sobre después de un breve delay
             setTimeout(() => {
@@ -604,7 +580,6 @@
                 cardScreen.classList.add('active');
                 // Lanzar confeti al abrir la tarjeta
                 startConfetti();
-                // startPiano();   // <-- COMENTADO: descomenta si quieres piano en vez de (o junto a) la canción
             }, 600);
         });
 
@@ -641,16 +616,16 @@
             }, 300);
         }
 
-        // --- Música de piano con Tone.js (opcional) ---
+        // --- Melodía de piano con Tone.js (Feliz Cumpleaños) ---
         let pianoStarted = false;
         function startPiano() {
             if (pianoStarted) return;
             pianoStarted = true;
 
-            // Iniciar contexto de audio
+            // Iniciar contexto de audio (debe ser dentro de un gesto del usuario)
             Tone.start();
 
-            // Sintetizador de piano
+            // Sintetizador de piano: un sonido suave y cálido
             const synth = new Tone.PolySynth(Tone.Synth, {
                 oscillator: {
                     type: 'triangle'
@@ -659,23 +634,36 @@
                     attack: 0.02,
                     decay: 0.1,
                     sustain: 0.3,
-                    release: 1
+                    release: 1.2
                 }
             }).toDestination();
-            synth.volume.value = -8; // Volumen moderado
 
-            // Melodía de Feliz Cumpleaños (notas y duraciones)
+            // Un poco de reverb para que suene más "bonito" y envolvente
+            const reverb = new Tone.Reverb({
+                decay: 2.5,
+                preDelay: 0.01,
+                wet: 0.3
+            }).toDestination();
+            synth.connect(reverb);
+
+            synth.volume.value = -10; // Volumen moderado para que no sature
+
+            // Melodía de "Feliz Cumpleaños" en una versión ligeramente más lenta y expresiva
+            // Notas: Do Do Re Do Fa Mi / Do Do Re Do Sol Fa / Do Do Do' La Fa Mi Re / Sib Sib La Fa Sol Fa
             const melody = [
                 { note: 'C4', duration: '8n' }, { note: 'C4', duration: '8n' },
                 { note: 'D4', duration: '4n' }, { note: 'C4', duration: '4n' },
                 { note: 'F4', duration: '4n' }, { note: 'E4', duration: '2n' },
+
                 { note: 'C4', duration: '8n' }, { note: 'C4', duration: '8n' },
                 { note: 'D4', duration: '4n' }, { note: 'C4', duration: '4n' },
                 { note: 'G4', duration: '4n' }, { note: 'F4', duration: '2n' },
+
                 { note: 'C4', duration: '8n' }, { note: 'C4', duration: '8n' },
                 { note: 'C5', duration: '4n' }, { note: 'A4', duration: '4n' },
                 { note: 'F4', duration: '4n' }, { note: 'E4', duration: '4n' },
                 { note: 'D4', duration: '2n' },
+
                 { note: 'Bb4', duration: '8n' }, { note: 'Bb4', duration: '8n' },
                 { note: 'A4', duration: '4n' }, { note: 'F4', duration: '4n' },
                 { note: 'G4', duration: '4n' }, { note: 'F4', duration: '2n' }
@@ -687,8 +675,8 @@
             }, melody.map(n => [n.note, n])).start(0);
 
             part.loop = true;
-            part.loopEnd = '4m'; // Ajustar según la duración total
-            Tone.Transport.bpm.value = 100;
+            part.loopEnd = '4m'; // Ajustar según la duración total de la melodía
+            Tone.Transport.bpm.value = 90; // Un poco más lento para que sea más emotivo
             Tone.Transport.start();
         }
 
